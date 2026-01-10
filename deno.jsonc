@@ -1,0 +1,52 @@
+{
+  // Disable the lockfile so dependency resolution stays flexible.
+  // This is intentional for this repo and avoids constant lockfile churn.
+  "lock": false,
+
+  "tasks": {
+    // Keeps import_map.json in sync with the "imports" section below.
+    // This extracts only the "imports" block from deno.jsonc and writes it
+    // to import_map.json so tools that rely on an import map always see
+    // the canonical mappings.
+    //
+    // This should run automatically in CI/CD on every build.
+    "sync-import-map": "deno eval --ext ts 'import JSON5 from \"npm:json5@^2\"; const raw = await Deno.readTextFile(\"deno.jsonc\"); const cfg = JSON5.parse(raw); const imports = cfg.imports ?? {}; await Deno.writeTextFile(\"import_map.json\", JSON.stringify({ imports }, null, 2)); console.log(\"import_map.json synced\");' && deno fmt import_map.json",
+
+    // Runs the SQL packaging pipeline.
+    // This executes lib/cat.ts, which discovers all *.cat.ts packager modules
+    // and generates their corresponding *.auto.sqlite.sql outputs.
+    "compile-packages": "lib/cat.ts",
+
+    // Enforces formatting, linting, and tests before allowing a commit.
+    // This helps catch issues early and keeps the codebase consistent.
+    //
+    // Intended to run both locally and in CI/CD.
+    "git-hook-pre-commit": "deno fmt --check --ignore=\"support\" --ignore=\"**/fixture\" && deno lint  --ignore=\"support\" && deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
+
+    // Runs the full test suite before pushing changes upstream.
+    // This is a safety net to prevent broken code from being pushed.
+    "git-hook-pre-push": "deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
+
+    // Performs a full TypeScript type check across the repo.
+    // This excludes support files and focuses only on production code.
+    "ts-check": "deno check --no-lock $(find . -name '*.ts' -not -path \"./support/*\")",
+
+    // Prepares a release by creating a final semantic version tag.
+    // Typically run manually just before publishing.
+    "prepare-publish": "git semtag final",
+
+    // One-time setup to tell git to use the repository-local hooks
+    // defined in the .githooks directory.
+    "init": "git config core.hooksPath .githooks"
+  },
+
+  "imports": {
+    // Canonical import mappings for the project.
+    // These are mirrored into import_map.json by the sync-import-map task.
+    //
+    // Deno standard library modules are pinned by major version to
+    // avoid unexpected breaking changes.
+    "@std/path": "jsr:@std/path@^1",
+    "@std/fs": "jsr:@std/fs@^1"
+  }
+}
