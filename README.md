@@ -127,7 +127,8 @@ happens later, mechanically, and repeatably.
 
 ### `*.cat.ts` packagers
 
-A `*.cat.ts` file defines one SQL package.
+A `*.cat.ts` file defines one SQL package with multiple "included" sources
+either from either local files or remotes or hybrid.
 
 Example:
 
@@ -212,13 +213,21 @@ Result:
 - emits SQL to STDOUT
 - no filesystem writes
 
-This enables simple consumption:
+This enables simple consumption directly from remotes, with full revision
+control:
 
 ```sh
-curl https://example.com/sql/info-schema.cat.ts | sqlite3 db.sqlite
+export SCHEMA_VERSION=/v0.1.1
+curl https://raw.githubusercontent.com/netspective-labs/sqlite-aide/refs/tags/${SCHEMA_VERSION}/lib/info-schema.auto.sqlite.sql | sqlite3 db.sqlite
 ```
 
-Why this works
+Or, always grab the latest (might be cached):
+
+```sh
+curl https://raw.githubusercontent.com/netspective-labs/sqlite-aide/refs/heads/main/lib/info-schema.auto.sqlite.sql | sqlite3 db.sqlite
+```
+
+### Benefits
 
 - SQL stays small and readable
 - Packaging is deterministic and reproducible
