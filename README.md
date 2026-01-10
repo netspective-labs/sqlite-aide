@@ -78,6 +78,154 @@ SQLite-Aide is useful for:
   documentation
 - Anyone treating SQLite as an embedded system component rather than a black box
 
+## `cat.ts` and SQL Package Auto-Compilation
+
+`cat.ts` is a small Deno module that behaves like a programmable Unix `cat`.
+
+It concatenates text sources into a single output stream. Sources can be:
+
+- local files
+- file: URLs
+- remote http(s) URLs
+- generated text
+
+Example:
+
+```ts
+await new Cat()
+  .add("a.sql", "b.sql", "https://example.com/c.sql")
+  .writeToStdout();
+```
+
+This produces one combined SQL stream.
+
+### Keeping SQL modular
+
+SQL is authored as small, focused files:
+
+```
+src/
+  core-ddl.sqlite.sql
+  info-schema.sqlite.sql
+  views/
+    patients.sql
+    encounters.sql
+```
+
+Nothing is pre-bundled. Packaging is explicit and mechanical.
+
+Traditional SQL projects tend to either:
+
+- Collapse everything into one giant SQL file, which becomes hard to maintain
+- Or keep many small SQL files, which are hard to consume as a unit
+
+`cat.ts` allows us to keep SQL modular and human-friendly while still producing
+stable, consumable packages.
+
+Individual SQL files remain small, focused, and easy to review. Packaging
+happens later, mechanically, and repeatably.
+
+### `*.cat.ts` packagers
+
+A `*.cat.ts` file defines one SQL package.
+
+Example:
+
+```ts
+// lib/info-schema.cat.ts
+export default new Cat().add(
+  "../src/core-ddl.sqlite.sql",
+  "../src/info-schema.sqlite.sql",
+);
+```
+
+Each packager produces pulls in multiple sources but produces exactly one SQL
+artifact.
+
+Naming is convention-based:
+
+```
+info-schema.cat.ts
+→ `info-schema.cat.auto.sqlite.sql`
+```
+
+### Auto-compilation
+
+autoCompile finds executable scripts, runs them, and captures STDOUT as text.
+
+Example generator:
+
+```sh
+#!/usr/bin/env bash
+echo "CREATE VIEW example AS SELECT 1;"
+```
+
+Example auto-compile usage:
+
+```ts
+for await (
+  const gen of cat.autoCompile([
+    { glob: "sql/**/*.gen.sql" },
+  ])
+) {
+  cat.addText(gen.text, gen.label);
+}
+```
+
+Generated SQL is treated exactly like static SQL.
+
+### Compiling packages via CI/CD
+
+All packages are built via a single task:
+
+```sh
+deno task compile-packages
+```
+
+This task:
+
+- finds all `*.cat.ts` files
+- executes them
+- materializes their .cat.auto.sqlite.sql outputs
+
+**Local vs remote behavior**
+
+Local execution:
+
+```sh
+./lib/info-schema.cat.ts
+```
+
+Result:
+
+- writes `info-schema.cat.auto.sqlite.sql` next to the module
+- prints the file path only
+
+Remote execution:
+
+```sh
+deno run https://example.com/sql/info-schema.cat.ts
+```
+
+Result:
+
+- emits SQL to STDOUT
+- no filesystem writes
+
+This enables simple consumption:
+
+```sh
+curl https://example.com/sql/info-schema.cat.ts | sqlite3 db.sqlite
+```
+
+Why this works
+
+- SQL stays small and readable
+- Packaging is deterministic and reproducible
+- No custom build system
+- Packages are downloadable, pipeable, and cacheable
+- `cat.ts` is a build primitive, not a framework
+
 ## Future direction
 
 The repository is expected to grow over time with additional aides, such as:
