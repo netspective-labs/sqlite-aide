@@ -77,3 +77,8 @@ ${captured.rowCounts}
 rm -f rowcounts.plan.tmp.sql
 rm -f test.tmp.db
 ```
+
+```spry exectutionReportLog
+If you run `spry rb report` this will get filled out with the log otherwise
+it's ignored.
+```
