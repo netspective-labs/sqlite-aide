@@ -13,6 +13,17 @@ spry rb run
 # row counts test (complicated "stored procedure" strategy)
 spry rb run --graph rowcounts
 
+# for TAP (open test.tap in text editor, test.tap.html in browser)
+spry rb tap
+spry rb tap --save test.tap
+spry rb tap --style html --save test.tap.html
+spry rb run --style markdown --save test.tap.md
+spry rb run --style json --save test.tap.json
+
+spry rb tap --graph rowcounts --style html --save test.tap.html
+spry rb tap --graph rowcounts --style markdown --save test.tap.md
+spry rb tap --graph rowcounts --style json --save test.tap.json
+
 # for full diagnostics (open test.md in any Markdown viewer)
 spry rb report > test.md
 spry rb report --graph rowcounts > test.rowcounts.md
