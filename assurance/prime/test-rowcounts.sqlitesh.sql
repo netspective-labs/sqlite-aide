@@ -22,7 +22,7 @@ This script:
 .output ./rowcounts.plan.tmp.sql
 SELECT contents
 FROM ".sqlite-aide.d"
-WHERE path = 'sqlite-aide.d/census/census/census/census/census/census/census/census/census/census/census/census/census/census/census/census/rowcounts.plan.sql';
+WHERE path = 'sqlite-aide.d/census/rowcounts.plan.sql';
 .output stdout
 
 -- 3) Execute the generated plan
