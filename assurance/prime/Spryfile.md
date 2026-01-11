@@ -1,18 +1,4 @@
-SQLfolio end-to-end (`e2e`) assurance example.
-
-- `code DEFAULTS` sets up the presets for how to treat fenced code blocks that
-  have no arguments.
-  - `sql` blocks are obvious
-  - `-X prime` looks up the `prime` spawnable engine (`-X` and `--executable`
-    are synonyms) and indicate that the fenced code cell is an executable task
-- `yaml CONNECTIONS` sets up the executable cells' shared configuration
-- Like all the `sql` cells, `bash clean` is a task but `--graph` indicates that
-  it's part of the "housekeeping" group of tasks so it won't be run in the main
-  block (it would have to be called specifically)
-
-```code DEFAULTS
-sql * --interpolate --injectable -X prime --capture
-```
+# SQLite Aide Prime end-to-end (e2e) regression test
 
 ```yaml CONNECTIONS
 spawnables:
@@ -44,7 +30,33 @@ sql destroy-sql-objects -X prime --include ../../src/census/destroy.sqlite.sql -
 
 ---
 
-Rowcounts test cases:
+## Rowcounts test cases
+
+This test is a little complex because Spry is simulating a stored procedure,
+something SQLite doesn’t support directly. The rowcount script first writes its
+execution plan into `.sqlite-aide.d`, effectively generating the SQL body of
+that “procedure.” The script then extracts this plan as a temporary file and
+executes it to perform the actual work. Finally, it runs the rowcount script
+again to aggregate and publish results. This pattern compensates for SQLite’s
+lack of stored procedures by generating, storing, and then executing the SQL
+needed to drive a multi-step workflow.
+
+Step 1: It generates a “plan” for how to do all the row-count checks. That
+happens when it runs `census-rowcounts.sqlite.sql`. Instead of immediately
+executing all checks directly, that script writes out a detailed plan (generated
+as SQL code) into `.sqlite-aide.d` table.
+
+Step 2: It then pulls that saved plan (generated SQL code) text out of and
+captures it to a Spry working memory variable called `rowCounts` using
+`-C rowCounts`.
+
+Step 3: It executes the generated SQL code from Step 2 which populate
+`.sqlite-aide.d` with the detailed row counts.
+
+Step 4: It runs `census-rowcounts.sqlite.sql` again, but this time the detailed
+results already exist. On this second pass, the script is used to aggregate and
+publish the final summary of row counts, so you can see the consolidated results
+of the checks.
 
 ```sql census-rowcounts-init -X prime --graph rowcounts --include ../../src/census/census-rowcounts.sqlite.sql
 -- census-rowcounts.sqlite.sql generate rowcount execution plan 

@@ -1,17 +1,30 @@
-SQLite Aide Primary Regression Test Suite
+# SQLite Aide Primary Regression Test Suite
+
+Use [`spry`](https://sprymd.org) to run this suite. `test.tmp.db` is where you
+can review output.
 
 ```bash
-# don't modify the fixture
-cp ../fixtures/chinook.db test.tmp.db
+# list tasks
+spry rb ls          
 
-# load the static tests (idempotent)
-sqlite3 test.tmp.db < test.sqlitesh.sql
+# primary test (imperative, see output in test.tmp.db)
+spry rb run           
 
-# load the dynamic tests (idempotent)
-sqlite3 test.tmp.db < test-rowcounts.sqlitesh.sql
-rm -f rowcounts.plan.tmp.sql   # remove the temp file
+# row counts test (complicated "stored procedure" strategy)
+spry rb run --graph rowcounts
+
+# for full diagnostics (open test.md in any Markdown viewer)
+spry rb report > test.md
+spry rb report --graph rowcounts > test.rowcounts.md
 
 # cleanup
-sqlite3 test.tmp.db < clean.sqlitesh.sql
-rm -f test.tmp.db
+spry rb run
 ```
+
+💡 The files named `clean.sqlitesh.sql`, `test.sqlitesh.sql`, and
+`test-rowcounts.sqlitesh.sql` are included as plain SQL examples. They mirror
+what the regression steps would look like if everything were written and
+executed without Spry. In practice, the real regression suite is defined and run
+through Spry using Spryfile.md, which drives the entire workflow. The SQL files
+are there only as equivalents so you can see the underlying logic without Spry’s
+orchestration.
