@@ -63,21 +63,18 @@ of the checks.
 -- and stores it in sqlite-aide.d/census/rowcounts.plan.sql in ".sqlite-aide.d"
 ```
 
-Capture the generated plan to an in memory variable called `rowCounts`:
+We use `--recurse` because the output of the code cell from the `SELECT`
+generates another script to run. `--recurse` without a count is same as
+`--iterate 2` or `--recurse 2` meaning iterate twice (instead of the usual
+once).
 
-```sql census-rowcounts-gen -X prime -C rowCounts --graph rowcounts --dep census-rowcounts-init
+```sql census-rowcounts-gen --recurse -X prime --graph rowcounts --dep census-rowcounts-init
 SELECT contents
 FROM ".sqlite-aide.d"
 WHERE path = 'sqlite-aide.d/census/rowcounts.plan.sql';
 ```
 
-Execute the generated plan:
-
-```sql census-rowcounts-run -X prime --graph rowcounts --dep census-rowcounts-gen --interpolate
-${captured.rowCounts}
-```
-
-```sql census-rowcounts -X prime --graph rowcounts --dep census-rowcounts-run --include ../../src/census/census-rowcounts.sqlite.sql
+```sql census-rowcounts -X prime --graph rowcounts --dep census-rowcounts-gen --include ../../src/census/census-rowcounts.sqlite.sql
 -- Publish aggregated rowcount results back into the database
 ```
 
@@ -85,9 +82,14 @@ ${captured.rowCounts}
 
 ## Housekeeping
 
-```bash clean --dep destroy-sql-objects --graph housekeeping
+```bash clean --graph housekeeping
 rm -f rowcounts.plan.tmp.sql
 rm -f test.tmp.db
+rm -f test.md
+rm -f test.tap
+rm -f test.tap.html
+rm -f test.tap.md
+rm -f test.tap.json
 ```
 
 ```spry exectutionReportLog

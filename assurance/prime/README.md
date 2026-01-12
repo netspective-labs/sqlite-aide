@@ -8,7 +8,7 @@ can review output.
 spry rb ls          
 
 # primary test (imperative, see output in test.tmp.db)
-spry rb run           
+spry rb run --verbose rich
 
 # row counts test (complicated "stored procedure" strategy)
 spry rb run --graph rowcounts
